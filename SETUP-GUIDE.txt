@@ -1,0 +1,56 @@
+JOBLY AUTHENTICATION SETUP (SUPABASE)
+
+IMPORTANT
+The sign-in code is prepared, but accounts will NOT work until you connect a Supabase project. Do not invite real users or collect real resumes until you finish security and privacy review. This guide sets up email/password authentication; it does not make the whole job board production-ready.
+
+1. CREATE A SUPABASE PROJECT
+- Go to https://supabase.com/ and create an account/project.
+- Keep your project owner credentials private.
+- In Project Settings / API (or Connect), copy the Project URL and the publishable key (or legacy anon/public key).
+- NEVER copy a secret key or service_role key into website HTML. Browser code is public.
+
+2. ADD THE PUBLIC KEYS TO JOBLY
+- Open index.html in Visual Studio Code.
+- Near the top of the JavaScript, find:
+  const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
+- Replace the placeholder strings with your Project URL and publishable/anon key. Keep the quotation marks.
+- These are public browser credentials. They are only appropriate when access is secured by Supabase Auth and Row Level Security policies. Never put a service-role/secret key here.
+
+3. CONFIGURE AUTHENTICATION
+In Supabase Dashboard:
+- Open Authentication settings and enable Email sign-in.
+- Keep email confirmation enabled.
+- Set the Site URL and allowed redirect URLs to your actual local development URL and later your production domain. Avoid broad wildcard redirects in production.
+- Configure SMTP for reliable production email delivery. The default email service may have restrictions.
+- Set the minimum password length to 10 (the form enforces 10 characters) and a strong password policy and enable available abuse protections/rate limits/CAPTCHA as appropriate.
+- Password reset: the reset link returns to this same page (add its exact URL to Redirect URLs). Jobly detects the recovery event and shows a "Choose a new password" form. Test it end to end.
+
+4. RUN IT LOCALLY
+Opening index.html by double-click may work for a preview, but use a local development server for auth redirect testing. In VS Code, install the Live Server extension, right-click index.html, and choose Open with Live Server. Add that exact local URL to Supabase Authentication's allowed redirect URLs.
+
+5. VERIFY BEFORE USE
+- Test sign-up with an email you control.
+- Confirm the email link returns to the correct allowed URL.
+- Test sign-in, wrong password, sign-out, and password-reset email.
+- Test in a private/incognito browser and on a second device.
+- Do not store passwords in your own database or browser localStorage.
+- Do not add private profile/resume tables without Row Level Security (RLS) policies that restrict rows to auth.uid(). The auth login alone does not secure future user data.
+
+CURRENT LIMITATIONS
+- Authentication can work only after you add your own Supabase project URL and public key and configure its dashboard.
+- This does not yet create a private user profile database, persistent saved jobs, actual resume uploads, job applications, live job feeds, or employer accounts.
+- The sample jobs are fictional. The contact form is still a demo.
+- Do not use this prototype to collect sensitive data until you add a privacy policy, secure private file storage, database RLS, input validation, monitoring, abuse prevention, and a production security review.
+
+SUPABASE DOCUMENTATION
+https://supabase.com/docs/guides/auth
+https://supabase.com/docs/guides/auth/passwords
+https://supabase.com/docs/guides/database/postgres/row-level-security
+
+
+UPDATES IN THIS VERSION
+- The page has a Content-Security-Policy meta tag. It allows connections to https://*.supabase.co. If you use a Supabase custom domain, add it to connect-src in index.html.
+- The Supabase script is pinned to version 2.45.4 from jsDelivr. For production, consider hosting it yourself or adding a Subresource Integrity (integrity=...) attribute.
+- Sign-up asks users to confirm they are 16-18 and have read the privacy & terms. No birthdate is collected.
+- Saved jobs, schedule, resume and tracker are stored only in the browser (localStorage), not in Supabase. If you later add tables, use RLS restricted to auth.uid().
