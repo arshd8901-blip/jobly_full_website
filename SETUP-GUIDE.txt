@@ -1,56 +1,72 @@
-JOBLY AUTHENTICATION SETUP (SUPABASE)
+JOBLY SETUP GUIDE (version 3)
+=============================
 
-IMPORTANT
-The sign-in code is prepared, but accounts will NOT work until you connect a Supabase project. Do not invite real users or collect real resumes until you finish security and privacy review. This guide sets up email/password authentication; it does not make the whole job board production-ready.
+WHAT'S IN THIS FOLDER
+  index.html              the whole website
+  config.js               YOUR two public Supabase values go here (this is the only file you edit)
+  supabase/schema.sql     the database tables and security rules (run once in Supabase)
+  manifest.webmanifest    lets people "Add to Home Screen"
+  icon.svg                the app icon
+  SETUP-GUIDE.txt         this file
+  ADMIN-GUIDE.txt         how YOU approve jobs, read reports, and run the site day to day
+  GROWTH-GUIDE.txt        email service, custom domain, analytics, legal checklist
 
-1. CREATE A SUPABASE PROJECT
-- Go to https://supabase.com/ and create an account/project.
-- Keep your project owner credentials private.
-- In Project Settings / API (or Connect), copy the Project URL and the publishable key (or legacy anon/public key).
-- NEVER copy a secret key or service_role key into website HTML. Browser code is public.
+PART 1: UPDATE YOUR GITHUB SITE (VS Code)
+  1. Open your Jobly folder in VS Code.
+  2. Copy ALL files from this zip into the top level of that folder (replace index.html when asked).
+     The "supabase" folder goes in too.
+  3. Open config.js and paste your two values (copy them from the OLD index.html lines that said
+     SUPABASE_URL and SUPABASE_ANON_KEY). Keep the quotes:
+         supabaseUrl: "https://xxxx.supabase.co",
+         supabaseKey: "sb_publishable_xxxx"
+     Use the PUBLISHABLE (anon) key only. Never a secret / service_role key.
+  4. Source Control -> type a message -> Commit -> Sync Changes.
+  Because your keys now live in config.js, future updates to index.html will not erase them.
 
-2. ADD THE PUBLIC KEYS TO JOBLY
-- Open index.html in Visual Studio Code.
-- Near the top of the JavaScript, find:
-  const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
-  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
-- Replace the placeholder strings with your Project URL and publishable/anon key. Keep the quotation marks.
-- These are public browser credentials. They are only appropriate when access is secured by Supabase Auth and Row Level Security policies. Never put a service-role/secret key here.
+PART 2: CREATE THE DATABASE (once, ~3 minutes)
+  1. Supabase dashboard -> SQL Editor -> New query.
+  2. Open supabase/schema.sql in VS Code, copy EVERYTHING, paste it into the query box, click Run.
+     You should see "Success. No rows returned". It is safe to run again later.
+  3. Check Table Editor: you should now see jobs, job_private, user_data, reports, contact_messages.
+  Every table has Row Level Security turned on. The site can only do what the rules allow
+  (see "Security model" below).
 
-3. CONFIGURE AUTHENTICATION
-In Supabase Dashboard:
-- Open Authentication settings and enable Email sign-in.
-- Keep email confirmation enabled.
-- Set the Site URL and allowed redirect URLs to your actual local development URL and later your production domain. Avoid broad wildcard redirects in production.
-- Configure SMTP for reliable production email delivery. The default email service may have restrictions.
-- Set the minimum password length to 10 (the form enforces 10 characters) and a strong password policy and enable available abuse protections/rate limits/CAPTCHA as appropriate.
-- Password reset: the reset link returns to this same page (add its exact URL to Redirect URLs). Jobly detects the recovery event and shows a "Choose a new password" form. Test it end to end.
+PART 3: SUPABASE AUTH SETTINGS (if you haven't already)
+  - Authentication -> URL Configuration: Site URL and Redirect URLs = your live site address.
+  - Authentication -> Providers -> Email: enabled, "Confirm email" ON.
+  - Authentication -> Sign In / Providers -> password minimum length 10.
+  - Authentication -> SMTP Settings: set up a real email service (see GROWTH-GUIDE.txt). The built-in
+    sender allows only a few emails per hour.
 
-4. RUN IT LOCALLY
-Opening index.html by double-click may work for a preview, but use a local development server for auth redirect testing. In VS Code, install the Live Server extension, right-click index.html, and choose Open with Live Server. Add that exact local URL to Supabase Authentication's allowed redirect URLs.
+PART 4: TEST EVERYTHING (use a private/incognito window)
+  [ ] Site loads, "Setup needed" warning gone, sample banner shows (no real jobs yet).
+  [ ] Create an account, verify the email, sign in.
+  [ ] Resume builder: type a name, wait 2 seconds. In Table Editor -> user_data you see your row.
+  [ ] Sign in on another device/browser: your resume and tracker appear.
+  [ ] For employers: submit a test job. In Table Editor -> jobs it appears with status = pending.
+      Change status to approved -> refresh the site -> real jobs replace the samples.
+  [ ] Open a job -> "Report this listing" -> check Table Editor -> reports.
+  [ ] Contact page -> send a message -> check Table Editor -> contact_messages.
 
-5. VERIFY BEFORE USE
-- Test sign-up with an email you control.
-- Confirm the email link returns to the correct allowed URL.
-- Test sign-in, wrong password, sign-out, and password-reset email.
-- Test in a private/incognito browser and on a second device.
-- Do not store passwords in your own database or browser localStorage.
-- Do not add private profile/resume tables without Row Level Security (RLS) policies that restrict rows to auth.uid(). The auth login alone does not secure future user data.
+HOW THE SITE BEHAVES
+  * Not connected / database empty: shows sample listings with a clear "sample" banner.
+  * Once at least one job is approved: ONLY real approved jobs are shown (samples disappear).
+  * Without an account: resume/tracker/searches stay on that device only.
+  * With an account: they also save to the user's private row in user_data, and sync across devices.
+  * Signing out clears that device's copy (it stays safe in the account).
 
-CURRENT LIMITATIONS
-- Authentication can work only after you add your own Supabase project URL and public key and configure its dashboard.
-- This does not yet create a private user profile database, persistent saved jobs, actual resume uploads, job applications, live job feeds, or employer accounts.
-- The sample jobs are fictional. The contact form is still a demo.
-- Do not use this prototype to collect sensitive data until you add a privacy policy, secure private file storage, database RLS, input validation, monitoring, abuse prevention, and a production security review.
+SECURITY MODEL (what the rules enforce)
+  * Anyone can read jobs with status = approved. Nothing else is publicly readable.
+  * Signed-in users can submit jobs only as pending + not verified, only as themselves, max 10 waiting.
+  * Employer contact emails (job_private) are visible only to that employer and to you.
+  * user_data is readable/writable only by its owner.
+  * reports and contact_messages can be written by anyone but are never readable through the site.
+  * Database checks reject: ages below 16, apply links that aren't https, pay ranges that don't make sense.
+  * Only the public (anon/publishable) key is in the website. Never put a secret key in config.js.
 
-SUPABASE DOCUMENTATION
-https://supabase.com/docs/guides/auth
-https://supabase.com/docs/guides/auth/passwords
-https://supabase.com/docs/guides/database/postgres/row-level-security
-
-
-UPDATES IN THIS VERSION
-- The page has a Content-Security-Policy meta tag. It allows connections to https://*.supabase.co. If you use a Supabase custom domain, add it to connect-src in index.html.
-- The Supabase script is pinned to version 2.45.4 from jsDelivr. For production, consider hosting it yourself or adding a Subresource Integrity (integrity=...) attribute.
-- Sign-up asks users to confirm they are 16-18 and have read the privacy & terms. No birthdate is collected.
-- Saved jobs, schedule, resume and tracker are stored only in the browser (localStorage), not in Supabase. If you later add tables, use RLS restricted to auth.uid().
+IF SOMETHING GOES WRONG
+  * Jobs don't show / "sample" banner stays: check config.js values, and that at least one job row has
+    status = approved. Browser F12 -> Console shows errors.
+  * "Couldn't submit" when posting a job: make sure schema.sql ran fully (Part 2), you're signed in,
+    the apply link starts with https://, and you have fewer than 10 jobs waiting.
+  * Verification / reset emails don't arrive: check spam, Redirect URLs, and SMTP (rate limits).
