@@ -368,8 +368,8 @@ table.avail input{width:18px;height:18px}
 <script>
 "use strict";
 // AUTH SETUP: replace these two placeholders with your Supabase Project URL and publishable/anon key. Never use a service_role key in browser code.
-const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
+const SUPABASE_URL = "https://sweyiyvfgieaocjsdgzg.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_tZqpfWpTU8Z3yhULrzQ6yg_QHVSlfcW";
 const authConfigured = !!(window.supabase && SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("YOUR_"));
 const authClient = authConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true } }) : null;
 
